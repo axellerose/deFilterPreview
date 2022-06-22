@@ -17,7 +17,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 chrome.browserAction.onClicked.addListener(function (activeTab) {
   chrome.tabs.executeScript(null, {
-    target: { tabId: tabId, allFrames: true },
+    target: { tabId: tabId },
     files: ['contentScripts.js'],
   })
   console.log('clicked')
