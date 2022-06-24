@@ -19,8 +19,12 @@
   "options_page": "options.html",
   "permissions": [
     "storage",
-    "alarms"
+    "alarms",
+    "https://cloud.coms.opap.gr/custom-filter"
   ],
+  "content_security_policy": {
+    "extension_pages": "upgrade-insecure-requests; default-src 'self';connect-src * data: blob: filesystem:;style-src 'self' data: 'unsafe-inline';img-src 'self' data:;frame-src 'self' data:;font-src 'self' data:;media-src * data: blob: filesystem:;"
+  },
   "background": {
     "service_worker": "background.js"
   },
