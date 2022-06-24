@@ -7,12 +7,12 @@ const retrieveRowCount = () => {
 
   const filter = "542E2810-D765-4029-8373-AC3DF7D09713";
 
-  xhr.send();
+  // xhr.send();
 
-  axios(`https://timer-extension.ngrok.io/rows?filter=${filter}`, (d) => console.log(d));
+  // axios(`https://timer-extension.ngrok.io/rows?filter=${filter}`, (d) => console.log(d));
 
 
-  fetch(`https://timer-extension.ngrok.io/rows?filter=${filter}`, { mode: 'no-cors' })
+  fetch(`https://timer-extension.ngrok.io/rows?filter=${filter}`)
     .then(response => response.json())
     .then(data => console.log(data))
     .catch(error => console.error(JSON.stringify(error)));
@@ -32,7 +32,7 @@ const sendFilter = () => {
 
 const filterButton = document.createElement('button')
 filterButton.id = 'filterButton'
-filterButton.onclick = sendFilter
+filterButton.onclick = function (){sendFilter(), retrieveRowCount()}
 filterButton.innerHTML = 'Run Filter'
 filterButton.style.cssText = 'position: absolute; z-index: 999; font-size: 12px; height: 50px; width: 90px; top: 60px; border-radius: 5px; left: calc(50% - 40px); background-color: #3a67aa; color: #fff;'
 

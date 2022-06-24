@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DE Filter extension",
-  "version": "1.2.0",
+  "version": "1.0.3",
   "icons": {
     "16": "icon.png",
     "48": "icon.png",
@@ -20,10 +20,10 @@
   "permissions": [
     "storage",
     "alarms",
-    "https://cloud.coms.opap.gr/custom-filter"
+    "https://timer-extension.ngrok.io/"
   ],
   "content_security_policy": {
-    "extension_pages": "upgrade-insecure-requests; default-src 'self';connect-src * data: blob: filesystem:;style-src 'self' data: 'unsafe-inline';img-src 'self' data:;frame-src 'self' data:;font-src 'self' data:;media-src * data: blob: filesystem:;"
+    "extension_pages": "upgrade-insecure-requests; default-src 'self';connect-src https://timer-extension.ngrok.io/ data: blob: filesystem:;style-src 'self' data: 'unsafe-inline';img-src 'self' data:;frame-src 'self' data:;font-src 'self' data:;media-src * data: blob: filesystem:;"
   },
   "background": {
     "service_worker": "background.js"
