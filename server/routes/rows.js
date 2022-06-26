@@ -11,10 +11,9 @@ router.get('/', async (req, res, next) => {
         filter,
       }
     });
-    console.log(resp, resp.data);
-    res.status(200).send(resp.data);
-
-t
+    const rows = resp.data;
+    console.log(resp.data);
+    res.status(200).json(rows);
   } catch (e) {
     console.error("Filter eroror", e)
     res.status(500).send();
