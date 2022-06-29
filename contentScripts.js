@@ -19,7 +19,7 @@ const sendFilter = () => {
     var allKeys = Object.keys(items)
     var allValues = Object.values(items)
     data = allValues[1]
-    console.log(allKeys)
+
     retrieveRowCount(data)
   })
 
