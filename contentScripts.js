@@ -1,12 +1,6 @@
-/*
-  TODO: 
-  
-*/
-
 const retrieveRowCount = (filter) => {
-
+  console.log('filter key:', filter)
   // const filter = "542E2810-D765-4029-8373-AC3DF7D09713";
-
 
   fetch(`https://timer-extension.ngrok.io/rows?filter=${filter}`)
     .then(response => response.json())
@@ -17,23 +11,74 @@ const retrieveRowCount = (filter) => {
     })
     .catch(error => console.error(JSON.stringify(error)))
 }
-const selectFilterParameters = () => {
-  const allInFilter = document.querySelectorAll('.expression-text > .ft-grouping > *')
-
-  allInFilter.forEach(element => {
-    console.log(element.textContent + ' ')
-  })
-}
 
 const sendFilter = () => {
-  const data = document.querySelector('#filterInput').value
-  retrieveRowCount(data)
-  // console.log(data)
+  let data
+  collectData()
+  chrome.storage.sync.get(null, function (items) {
+    var allKeys = Object.keys(items)
+    var allValues = Object.values(items)
+    data = allValues[1]
+    console.log(allKeys)
+    retrieveRowCount(data)
+  })
+
+}
+
+const collectData = () => {
+
+  let filterObject = {
+    DEname: '',
+    filterKey: '',
+    filterText: []
+  }
+
+  chrome.storage.sync.get('filterText', function (res) {
+    filterObject.filterText = res.filterText
+  })
+
+  try {
+
+    if (!document.querySelectorAll('.ft-filter-preview-source')[0]) {
+      chrome.storage.sync.get('DEname', function (res) {
+        filterObject.DEname = res.DEname
+      })
+    } else {
+      DEname = document.querySelectorAll('.ft-filter-preview-source')[0].textContent
+      chrome.storage.sync.set({
+        DEname,
+      }, () => console.log('de name set to storage: ', DEname))
+    }
+
+    if (!document.querySelectorAll('.carb-pop-input')[2]) {
+      chrome.storage.sync.get('fitlerKey', function (res) {
+        filterObject.filterKey = res.fitlerKey
+      })
+    } else {
+      filterKey = document.querySelectorAll('.carb-pop-input')[2].value
+      chrome.storage.sync.set({
+        filterKey,
+      }, () => console.log('filter key set to storage: ', filterKey))
+    }
+
+    const allInFilter = document.querySelectorAll('.expression-text > .ft-grouping > *')
+
+    allInFilter.forEach(element => {
+      filterObject.filterText.push(element.textContent)
+      chrome.storage.sync.set({ filterText: filterObject.filterText })
+    })
+
+  } catch (e) {
+    console.log('failed collect data', e)
+  }
+
 }
 
 const filterButton = document.createElement('button')
 filterButton.id = 'filterButton'
-filterButton.onclick = function () { sendFilter(), retrieveRowCount() }
+
+filterButton.onclick = sendFilter
+
 filterButton.innerHTML = 'Run Filter'
 filterButton.style.cssText = 'font-size: 12px; height: 26px; margin-right: 10px; '
 filterButton.classList.add('btn', 'btn-primary', 'btn-large')
