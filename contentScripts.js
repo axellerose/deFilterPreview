@@ -14,7 +14,6 @@ const retrieveRowCount = (filter) => {
 
 const sendFilter = () => {
   let data
-  collectData()
   chrome.storage.sync.get(null, function (items) {
     var allKeys = Object.keys(items)
     var allValues = Object.values(items)
@@ -117,9 +116,11 @@ setInterval(() => {
 
   } else if (filterOverviewPage) {
     headerContainer.appendChild(filterContainer)
+    collectData()
   } else if (editFilterPage) {
     headerInEdit.appendChild(filterContainer)
   } else {
     filterContainer.remove()
   }
+
 }, 1000)
