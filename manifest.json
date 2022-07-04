@@ -30,7 +30,7 @@
   },
   "content_scripts": [{
     "matches": ["<all_urls>"],
-    "js": ["contentScripts.js"],
+    "js": ["contentScripts.js", "convertFilterQuery.js"],
     "css": ["contentScripts.css"],
     "all_frames": true
   }]

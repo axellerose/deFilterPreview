@@ -18,7 +18,7 @@ const sendFilter = () => {
     var allKeys = Object.keys(items)
     var allValues = Object.values(items)
     data = allValues[1]
-
+    console.log(allValues[2])
     retrieveRowCount(data)
   })
 
@@ -59,13 +59,6 @@ const collectData = () => {
         filterKey,
       }, () => console.log('filter key set to storage: ', filterKey))
     }
-
-    const allInFilter = document.querySelectorAll('.expression-text > .ft-grouping > *')
-
-    allInFilter.forEach(element => {
-      filterObject.filterText.push(element.textContent)
-      chrome.storage.sync.set({ filterText: filterObject.filterText })
-    })
 
   } catch (e) {
     console.log('failed collect data', e)
