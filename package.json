@@ -1,5 +1,5 @@
 {
-  "name": "timer-extension",
+  "name": "deFilterPreview",
   "version": "1.0.2",
   "description": "",
   "main": "background.js",
@@ -9,12 +9,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/axellerose/timer-extension.git"
+    "url": "git+https://github.com/axellerose/deFilterPreview.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/axellerose/timer-extension/issues"
+    "url": "https://github.com/axellerose/deFilterPreview/issues"
   },
-  "homepage": "https://github.com/axellerose/timer-extension#readme"
+  "homepage": "https://github.com/axellerose/deFilterPreview#readme"
 }

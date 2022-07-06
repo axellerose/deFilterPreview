@@ -3,5 +3,4 @@ chrome.browserAction.onClicked.addListener(function (activeTab) {
     target: { tabId: tabId },
     files: ['contentScripts.js'],
   })
-  console.log('clicked')
 })

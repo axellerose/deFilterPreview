@@ -2,7 +2,7 @@ var express = require('express')
 var router = express.Router()
 const axios = require('axios')
 
-/* GET users listing. */
+/* GET rows count. */
 router.get('/', async (req, res, next) => {
   try {
     const { filter } = req.query
