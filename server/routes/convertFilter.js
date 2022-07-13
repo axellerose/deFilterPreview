@@ -27,18 +27,25 @@ const lookdeep = (object) => {
     if (object.hasOwnProperty(item)) {
       next = object[item]
 
-
-
       if (typeof next == 'object' && next != null) {
 
         if (item === 'LeftOperand') {
+          if (next.hasOwnProperty('LeftOperand')) {
+            collection[index++] = `<LeftOperand xsi:type="par:ComplexFilterPart">${lookdeep(next)}</LeftOperand>`
+          } else {
+            collection[index++] = `<LeftOperand xsi:type="par:SimpleFilterPart">${lookdeep(next)}</LeftOperand>`
+          }
 
-          collection[index++] = `<LeftOperand xsi:type="par:ComplexFilterPart 1">${lookdeep(next)}</LeftOperand>`
         } else if (item === 'RightOperand') {
-          collection[index++] = `<RightOperand xsi:type="par:ComplexFilterPart">${lookdeep(next)}</RightOperand>`
-        }
+          if (next.hasOwnProperty('RightOperand')) {
+            collection[index++] = `<RightOperand xsi:type="par:ComplexFilterPart">${lookdeep(next)}</RightOperand>`
+          } else {
+            collection[index++] = `<RightOperand xsi:type="par:SimpleFilterPart">${lookdeep(next)}</RightOperand>`
+          }
+
+        } else collection[index++] = `<${item}>${lookdeep(next)}</${item}>`
       }
-      else collection[index++] = `${item}>${String(next)}</${item}>`
+      else collection[index++] = `<${item}>${String(next)}</${item}>`
     }
   }
   return collection.join(' ')
@@ -47,5 +54,4 @@ const lookdeep = (object) => {
 var result = lookdeep(receivedFilter)
 
 console.log('Object converted to String : ' + result)
-
 

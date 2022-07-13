@@ -47,22 +47,22 @@
     </s:Body>
 </s:Envelope>
 
-<LeftOperand> 
-    <LeftOperand> 
-        <Property> Country </Property>,
-        <SimpleOperator> is equal to </SimpleOperator>,
-        <Value> UK </Value> 
-    </LeftOperand>,
-    <LogicalOperator> AND </LogicalOperator>,
-    <RightOperand> 
-        <Property> Language </Property>,
-        <SimpleOperator> is equal to </SimpleOperator>,
-        <Value> EN </Value> 
-    </RightOperand> 
-    </LeftOperand>
-<LogicalOperator> AND </LogicalOperator>
-<RightOperand> 
-    <Property> Email Address </Property>,
-    <SimpleOperator> contains </SimpleOperator>,
-    <Value> @mc.sc </Value> 
+Object converted to String : 
+<LeftOperand xsi:type="par:ComplexFilterPart">
+    <LeftOperand xsi:type="par:SimpleFilterPart">
+        <Property>Country</Property> 
+        <SimpleOperator>is equal to</SimpleOperator> 
+        <Value>UK</Value>
+    </LeftOperand> 
+    <LogicalOperator>AND</LogicalOperator> 
+    <RightOperand xsi:type="par:SimpleFilterPart">
+        <Property>Language</Property> 
+        <SimpleOperator>is equal to</SimpleOperator> 
+        <Value>EN</Value></RightOperand>
+</LeftOperand> 
+<LogicalOperator>AND</LogicalOperator> 
+<RightOperand xsi:type="par:SimpleFilterPart">
+    <Property>Email Address</Property> 
+    <SimpleOperator>contains</SimpleOperator> 
+    <Value>@mc.sc</Value>
 </RightOperand>
