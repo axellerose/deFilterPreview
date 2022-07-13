@@ -13,6 +13,7 @@ const retrieveRowCount = (filter) => {
 }
 
 const sendFilter = () => {
+  console.log('send filter func')
   // let data
   // chrome.storage.sync.get(null, function (items) {
   //   var allKeys = Object.keys(items)
@@ -26,30 +27,30 @@ const sendFilter = () => {
     LeftOperand: {},
     LogicalOperator: "",
     RightOperand: {},
-  });
-  
+  })
+
   const operand = () => ({
-      Property: "",
-      SimpleOperator: "",
-      Value: undefined,
-  });
+    Property: "",
+    SimpleOperator: "",
+    Value: undefined,
+  })
 
   function extractFilter(root) {
-    const conditionHandler = root.querySelector(".expressioneer-handle");
+    const conditionHandler = root.querySelector(".expressioneer-handle")
 
     // console.log("extracting", conditionHandler);
-    if(conditionHandler) {
-      const property = conditionHandler.querySelector(".expressioneer-condition-name").innerText;
-      const operator = conditionHandler.querySelector(".expressioneer-condition-operators").innerText;
-      const value = conditionHandler.querySelector(".expressioneer-condition-value").innerText;
-  
-      const op = operand();
-  
-      op.Property = property;
-      op.SimpleOperator = operator;
-      op.Value = value;
-  
-      return op;
+    if (conditionHandler) {
+      const property = conditionHandler.querySelector(".expressioneer-condition-name").innerText
+      const operator = conditionHandler.querySelector(".expressioneer-condition-operators").innerText
+      const value = conditionHandler.querySelector(".expressioneer-condition-value").innerText
+
+      const op = operand()
+
+      op.Property = property
+      op.SimpleOperator = operator
+      op.Value = value
+
+      return op
     } else {
       console.error('extract filter cannot find .expressioneer-handle')
     }
@@ -58,95 +59,95 @@ const sendFilter = () => {
   function filterFactory(simpleFilters, operator) {
 
     function addToComplexFilter(simpleFilters, operator, childFilter) {
-      const complexFilter = filter();
+      const complexFilter = filter()
 
-      complexFilter.LeftOperand = childFilter;
-      complexFilter.LogicalOperator = operator;
-      complexFilter.RightOperand = simpleFilters.shift();
+      complexFilter.LeftOperand = childFilter
+      complexFilter.LogicalOperator = operator
+      complexFilter.RightOperand = simpleFilters.shift()
 
-      return complexFilter;
+      return complexFilter
     }
 
     // console.log("incomming simple filters to factory", JSON.stringify(simpleFilters))
 
-    let complexFilter = filter();
+    let complexFilter = filter()
 
-    if(simpleFilters.length >= 2) {
-        
+    if (simpleFilters.length >= 2) {
 
-        complexFilter.LeftOperand = simpleFilters.shift();
-        complexFilter.LogicalOperator = operator;
-        complexFilter.RightOperand = simpleFilters.shift();
 
-        if(simpleFilters.length) {
+      complexFilter.LeftOperand = simpleFilters.shift()
+      complexFilter.LogicalOperator = operator
+      complexFilter.RightOperand = simpleFilters.shift()
 
-          for(let i = 0; i < simpleFilters.length; i++) {
-            complexFilter = addToComplexFilter(simpleFilters, operator, complexFilter);  
-          }
-          
+      if (simpleFilters.length) {
+
+        for (let i = 0; i < simpleFilters.length; i++) {
+          complexFilter = addToComplexFilter(simpleFilters, operator, complexFilter)
         }
+
+      }
     }
 
-    return complexFilter;
+    return complexFilter
   }
 
   function findFilter(root, oper) {
     // console.log("find filter root", root);
-    const filterRoot = root.querySelector(".condition-wrap"); 
+    const filterRoot = root.querySelector(".condition-wrap")
 
-    const logicalOperatorElement = filterRoot.querySelector("span");
-    
-    let operator = oper;
+    const logicalOperatorElement = filterRoot.querySelector("span")
 
-    if(logicalOperatorElement) {
-      operator = logicalOperatorElement.innerText;
+    let operator = oper
+
+    if (logicalOperatorElement) {
+      operator = logicalOperatorElement.innerText
     }
-    
-    const conditions = filterRoot.querySelector(".conditions"); // complex nested filters
+
+    const conditions = filterRoot.querySelector(".conditions") // complex nested filters
 
     // console.log("found conditions!", conditions);
 
-    if(conditions && conditions.querySelector(".conditions")) { // there are nested filters
-      const expressions = conditions.children[0].children; // ul > li elements
+    if (conditions && conditions.querySelector(".conditions")) { // there are nested filters
+      const expressions = conditions.children[0].children // ul > li elements
 
       // console.log("complex fiolter expressions", expressions)
 
-      const complexFilters = [];
+      const complexFilters = []
 
       for (let i = 0; i < expressions.length; i++) {
-        complexFilters.push(findFilter(expressions[i])); /// add oper?
+        complexFilters.push(findFilter(expressions[i])) /// add oper?
       }
 
       // console.log("complex filters arr before final factory", complexFilters);
 
-      return filterFactory(complexFilters, operator);
+      return filterFactory(complexFilters, operator)
 
     } else { // no nested filters, simple filter part
-      const conditionGroup = filterRoot.querySelector(".condition-group"); // simple filters
-      if(conditionGroup) {
-        const expressions = conditionGroup.children; // li elements
-        const simpleFilters = [];
-        for(let i = 0; i < expressions.length; i++ ) {
-          simpleFilters.push(extractFilter(expressions[i]));
+      const conditionGroup = filterRoot.querySelector(".condition-group") // simple filters
+      if (conditionGroup) {
+        const expressions = conditionGroup.children // li elements
+        const simpleFilters = []
+        for (let i = 0; i < expressions.length; i++) {
+          simpleFilters.push(extractFilter(expressions[i]))
         }
-  
+
         // console.log("simple filters before factory");
-        const complexFilter = filterFactory(simpleFilters, operator);
-        return complexFilter;
+        const complexFilter = filterFactory(simpleFilters, operator)
+        return complexFilter
       } else {
-        return extractFilter(filterRoot);
+        return extractFilter(filterRoot)
       }
 
-      
+
     }
   }
 
-  const filterRoot = document.querySelector(".expression"); 
+  const filterRoot = document.querySelector(".expression")
 
-  console.log(filterRoot);
+  console.log(filterRoot)
 
-  const resultFilter = findFilter(filterRoot);
-  console.log(resultFilter);
+  const resultFilter = findFilter(filterRoot)
+  console.log(resultFilter)
 }
 
 const collectData = () => {
