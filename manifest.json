@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DE Filter extension",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "icons": {
     "16": "icon.png",
     "48": "icon.png",
@@ -20,7 +20,8 @@
   "permissions": [
     "storage",
     "alarms",
-    "https://timer-extension.ngrok.io/"
+    "https://mcqh779j36zt3vg-882q0dpmyqg8.pub.sfmc-content.com/wz4zt4pzs3g",
+    "https://members.s10.exacttarget.com"
   ],
   "content_security_policy": {
     "extension_pages": "upgrade-insecure-requests; default-src 'self';connect-src * data: blob: filesystem:;style-src 'self' data: 'unsafe-inline';img-src 'self' data:;frame-src 'self' data:;font-src 'self' data:;media-src * data: blob: filesystem:;"

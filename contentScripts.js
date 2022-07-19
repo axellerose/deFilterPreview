@@ -1,27 +1,29 @@
-const retrieveRowCount = (filter) => {
-  console.log('filter key:', filter)
-  // const filter = "542E2810-D765-4029-8373-AC3DF7D09713";
+let deNameFromStorage = ''
+let filterKeyFromStorage = ''
+const retrieveRowCount = (filter, deName, filterKey) => {
 
-  fetch(`https://timer-extension.ngrok.io/rows?filter=${filter}`)
+  const data = {
+    deName,
+    filter,
+    filterKey
+  }
+  console.log('data from post ', data)
+  fetch(`https://mcqh779j36zt3vg-882q0dpmyqg8.pub.sfmc-content.com/wz4zt4pzs3g`, {
+    method: "POST",
+    mode: 'cors',
+    body: JSON.stringify(data)
+  })
     .then(response => response.json())
-    .then(data => {
-      const { RowCount } = data
-      console.log(RowCount)
-      document.querySelector('#filterInput').value = RowCount
-    })
+    .then(data => console.log("res", data))
+    // .then(data => {
+    //   const { RowCount } = data
+    //   console.log(RowCount)
+    //   document.querySelector('#filterInput').value = RowCount
+    // })
     .catch(error => console.error(JSON.stringify(error)))
 }
 
 const sendFilter = () => {
-  console.log('send filter func')
-  // let data
-  // chrome.storage.sync.get(null, function (items) {
-  //   var allKeys = Object.keys(items)
-  //   var allValues = Object.values(items)
-  //   data = allValues[1]
-  //   console.log(allValues[2])
-  //   retrieveRowCount(data)
-  // })
 
   const filter = () => ({
     LeftOperand: {},
@@ -143,24 +145,18 @@ const sendFilter = () => {
   }
 
   const filterRoot = document.querySelector(".expression")
-
-  console.log(filterRoot)
-
   const resultFilter = findFilter(filterRoot)
-  console.log(resultFilter)
+
+  retrieveRowCount(resultFilter, deNameFromStorage, filterKeyFromStorage)
+
 }
 
 const collectData = () => {
 
   let filterObject = {
     DEname: '',
-    filterKey: '',
-    filterText: []
+    filterKey: ''
   }
-
-  chrome.storage.sync.get('filterText', function (res) {
-    filterObject.filterText = res.filterText
-  })
 
   try {
 
@@ -172,7 +168,7 @@ const collectData = () => {
       DEname = document.querySelectorAll('.ft-filter-preview-source')[0].textContent
       chrome.storage.sync.set({
         DEname,
-      }, () => console.log('de name set to storage: ', DEname))
+      }, () => deNameFromStorage = DEname)
     }
 
     if (!document.querySelectorAll('.carb-pop-input')[2]) {
@@ -183,7 +179,7 @@ const collectData = () => {
       filterKey = document.querySelectorAll('.carb-pop-input')[2].value
       chrome.storage.sync.set({
         filterKey,
-      }, () => console.log('filter key set to storage: ', filterKey))
+      }, () => filterKeyFromStorage = filterKey)
     }
 
   } catch (e) {

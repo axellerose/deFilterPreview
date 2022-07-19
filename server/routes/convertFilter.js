@@ -48,10 +48,13 @@ const lookdeep = (object) => {
       else collection[index++] = `<${item}>${String(next)}</${item}>`
     }
   }
-  return collection.join(' ')
+  return collection.join('')
 }
 
 var result = lookdeep(receivedFilter)
 
 console.log('Object converted to String : ' + result)
 
+
+// TODO:  <ns1:DataFilter xsi:type="par:ComplexFilterPart" xmlns:par="http://exacttarget.com/wsdl/partnerAPI">
+//         </ns1:DataFilter>
