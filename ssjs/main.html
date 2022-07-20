@@ -4,7 +4,7 @@
   HTTPHeader.SetValue("Access-Control-Allow-Methods","POST");
   HTTPHeader.SetValue("Access-Control-Allow-Origin","*");
 
-  var VERSION = "V:19-07-2022; 18:01";
+  var VERSION = "V:20-07-2022; 14:22";
 
   // SETTINGS:
   var LOG_SETUP = {
@@ -15,7 +15,7 @@
 
   // TODO: keep in Setup:
   var MC_API_SETUP = {
-    mcEnv: "mcqh779j36zt3vg-882q0dpmyqg8" // only the organization part of the api path ('https://{mcEnv}.auth.marketingcloud.com)
+    mcEnv: "mcqh779j36zt3vg-882q0dpmyqg8"// only the organization part of the api path ('https://{mcEnv}.auth.marketingcloud.com)
     // 'businessUnitMID': '500008...' // Optional: set tp MID of the Business Unit you want to use.
   };
 
@@ -656,25 +656,86 @@ log.setup(LOG_SETUP);
 //
 
 if(Platform.Request.Method == 'POST') {
-  var jsonpost = Platform.Request.GetPostData()
+  try {
+    var jsonpost = Platform.Request.GetPostData()
   var json = Platform.Function.ParseJSON(jsonpost)
 
-  var DE = DataExtension.Init(json.body.deName)
-  var deName = json.body.deName
-  var filterKey = json.body.filterKey
-  var filter = json.body.filter
+  var TARGET_DE = DataExtension.Init('DE_Clients_Categories')
+  var deName = json.deName
+  var filterKey = json.filterKey
+  var filter = json.filter
 
-  var result = DataExtension.Retrieve({Property:"Name",SimpleOperator:"equals",Value: deName});
-  var resp = Platform.Function.Stringify(results);
+    /* Grabs DE Object Info */
+    var prox1 = new Script.Util.WSProxy();
+    var cols1 = ["Name", "CustomerKey"];
+    var filter1 = {
+        Property: "Name",
+        SimpleOperator: "equals",
+        Value: 'DE_Clients_Categories'
+    };
+    var desc = prox1.retrieve("DataExtension", cols1, filter1);
 
+    var CustKeyStr = desc.Results[0].CustomerKey;
+
+    var filterTest = {Property:"Country",SimpleOperator:"equals",Value:'UK'};
 
 
   respObj.ok = true
   respObj.message = 'success',
 
-  respObj.body = json
+
+  respObj.data = data
+  respObj.targetDE = TARGET_DE
+  respObj.customerKeyString = CustKeyStr
+
+  var filterName = deName + (Math.floor(Math.random()*1000)+1).toString()
+
+  var newFD = {
+    Name : filterName,
+    CustomerKey : filterName,
+    Filter : filterTest,
+    DataSource : {
+      Type : 'DataExtension',
+      CustomerKey : CustKeyStr
+    }
+  };
+
+  respObj.payload = filterName
 
 
+  try {
+      var result = FilterDefinition.Add(newFD);
+      respObj.filterResult = result
+  } catch (e) {
+      respObj.errorFilter = e
+ }
+
+ var config = {
+    endpoint: "https://mcqh779j36zt3vg-882q0dpmyqg8.pub.sfmc-content.com/5yr3z0jwnaz?filter="+newFD.Name, // Landing page
+    contentType: "application/x-www-form-urlencoded" // don't change
+
+  };
+
+  try {
+    var httpResult = HTTP.Get(
+      config.endpoint,
+      config.contentType
+    );
+
+    var result = Platform.Function.ParseJSON(httpResult.Content) 
+
+    respObj.postRequestResultObject = result
+  } catch(error) {
+    respObj.postRequestResultError = error;
+  }
+
+  } catch (e) {
+    respObj.postError = {
+      message: e.message,
+      location: "end of TOP post request "
+    }
+  }
+ 
 }
 
 

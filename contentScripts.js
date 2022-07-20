@@ -7,7 +7,7 @@ const retrieveRowCount = (filter, deName, filterKey) => {
     filter,
     filterKey
   }
-  console.log('data from post ', data)
+  console.log(JSON.stringify(data))
   fetch(`https://mcqh779j36zt3vg-882q0dpmyqg8.pub.sfmc-content.com/wz4zt4pzs3g`, {
     method: "POST",
     mode: 'cors',
@@ -18,7 +18,7 @@ const retrieveRowCount = (filter, deName, filterKey) => {
     // .then(data => {
     //   const { RowCount } = data
     //   console.log(RowCount)
-    //   document.querySelector('#filterInput').value = RowCount
+    // document.querySelector('#filterButton').innerText = RowCount
     // })
     .catch(error => console.error(JSON.stringify(error)))
 }
@@ -203,10 +203,6 @@ filterInput.type = 'text'
 filterInput.style.cssText = 'font-size: 12px; color: #000;border: 1px solid #D6D6D6;padding: 1px 3px;border-radius: 6px; margin-top: 3px;'
 filterInput.placeholder = 'Filter key'
 
-const filterOutput = document.createElement('h2')
-filterOutput.id = 'filterOutput'
-filterOutput.style.cssText = 'color: #e73e73;'
-filterOutput.textContent = ''
 
 const filterContainer = document.createElement('div')
 filterContainer.style.cssText = 'display: flex; justify-content: center; z-index: 999; position: relative; width: 30%; margin-left: 35%;'
