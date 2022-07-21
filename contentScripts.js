@@ -209,7 +209,7 @@ filterContainer.style.cssText = 'display: flex; justify-content: center; z-index
 
 filterContainer.id = 'filterContainer'
 filterContainer.appendChild(filterButton)
-filterContainer.appendChild(filterOutput)
+
 filterContainer.appendChild(filterInput)
 
 

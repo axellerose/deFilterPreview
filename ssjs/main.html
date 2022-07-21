@@ -4,7 +4,7 @@
   HTTPHeader.SetValue("Access-Control-Allow-Methods","POST");
   HTTPHeader.SetValue("Access-Control-Allow-Origin","*");
 
-  var VERSION = "V:20-07-2022; 14:22";
+  var VERSION = "V:21-07-2022; 15:55";
 
   // SETTINGS:
   var LOG_SETUP = {
@@ -680,13 +680,9 @@ if(Platform.Request.Method == 'POST') {
     var filterTest = {Property:"Country",SimpleOperator:"equals",Value:'UK'};
 
 
-  respObj.ok = true
-  respObj.message = 'success',
-
-
-  respObj.data = data
-  respObj.targetDE = TARGET_DE
-  respObj.customerKeyString = CustKeyStr
+    respObj.ok = true
+    respObj.message = 'success'
+    respObj.removed = false
 
   var filterName = deName + (Math.floor(Math.random()*1000)+1).toString()
 
@@ -708,7 +704,7 @@ if(Platform.Request.Method == 'POST') {
       respObj.filterResult = result
   } catch (e) {
       respObj.errorFilter = e
- }
+ } 
 
  var config = {
     endpoint: "https://mcqh779j36zt3vg-882q0dpmyqg8.pub.sfmc-content.com/5yr3z0jwnaz?filter="+newFD.Name, // Landing page
@@ -725,16 +721,27 @@ if(Platform.Request.Method == 'POST') {
     var result = Platform.Function.ParseJSON(httpResult.Content) 
 
     respObj.postRequestResultObject = result
+
+    
   } catch(error) {
     respObj.postRequestResultError = error;
+  } 
+
+  try {
+    var fd = FilterDefinition.Init(newFD.Name)
+    fd.Remove()
+    respObj.removed = true
+  } catch (error) {
+    respObj.removeError = error
   }
+  
 
   } catch (e) {
     respObj.postError = {
       message: e.message,
       location: "end of TOP post request "
     }
-  }
+  } 
  
 }
 
