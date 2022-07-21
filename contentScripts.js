@@ -7,19 +7,17 @@ const retrieveRowCount = (filter, deName, filterKey) => {
     filter,
     filterKey
   }
-  console.log(JSON.stringify(data))
+
   fetch(`https://mcqh779j36zt3vg-882q0dpmyqg8.pub.sfmc-content.com/wz4zt4pzs3g`, {
     method: "POST",
     mode: 'cors',
     body: JSON.stringify(data)
   })
     .then(response => response.json())
-    .then(data => console.log("res", data))
-    // .then(data => {
-    //   const { RowCount } = data
-    //   console.log(RowCount)
-    // document.querySelector('#filterButton').innerText = RowCount
-    // })
+    .then(data => {
+      const rows = data.postRequestResultObject.rowCount
+      document.querySelector('#filterButton').innerHTML = rows
+    })
     .catch(error => console.error(JSON.stringify(error)))
 }
 
@@ -197,20 +195,12 @@ filterButton.innerHTML = 'Run Filter'
 filterButton.style.cssText = 'font-size: 12px; height: 26px; margin-right: 10px; '
 filterButton.classList.add('btn', 'btn-primary', 'btn-large')
 
-const filterInput = document.createElement('input')
-filterInput.id = 'filterInput'
-filterInput.type = 'text'
-filterInput.style.cssText = 'font-size: 12px; color: #000;border: 1px solid #D6D6D6;padding: 1px 3px;border-radius: 6px; margin-top: 3px;'
-filterInput.placeholder = 'Filter key'
-
 
 const filterContainer = document.createElement('div')
 filterContainer.style.cssText = 'display: flex; justify-content: center; z-index: 999; position: relative; width: 30%; margin-left: 35%;'
 
 filterContainer.id = 'filterContainer'
 filterContainer.appendChild(filterButton)
-
-filterContainer.appendChild(filterInput)
 
 
 
