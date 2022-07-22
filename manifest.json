@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DE Filter extension",
-  "version": "1.0.9",
+  "version": "1.0.11",
   "icons": {
     "16": "icon.png",
     "48": "icon.png",

@@ -7,7 +7,7 @@ const retrieveRowCount = (filter, deName, filterKey) => {
     filter,
     filterKey
   }
-
+  console.log(data)
   fetch(`https://mcqh779j36zt3vg-882q0dpmyqg8.pub.sfmc-content.com/wz4zt4pzs3g`, {
     method: "POST",
     mode: 'cors',
@@ -32,8 +32,66 @@ const sendFilter = () => {
   const operand = () => ({
     Property: "",
     SimpleOperator: "",
-    Value: undefined,
+    Value: "",
   })
+
+  const convertOperator = (value) => {
+    let operator = ''
+
+    switch (value) {
+      case "is equal to":
+        operator = 'equals'
+        break
+      case "is not equal to":
+        operator = "notEquals"
+        break
+      case "is greater than":
+        operator = 'greaterThan'
+        break
+      case "is greater than or equal":
+        operator = 'greaterThanOrEqual'
+        break
+      case "is less than":
+        operator = 'lessThan'
+        break
+      case "is less than or equal":
+        operator = 'lessThanOrEqual'
+        break
+      case "is empty":
+        operator = 'equals'
+        break
+      case "is not empty":
+        operator = 'notEquals'
+        break
+      case "in":
+        operator = 'IN'
+        break
+      case "exists in":
+        operator = 'existsInString'
+        break
+      case "exists in whole word":
+        oeprator = 'existsInStringAsWord'
+        break
+      case "does not exist in":
+        operator = 'notExistsInString'
+        break
+      case 'begins with':
+        operator = 'beginsWith'
+        break
+      case "ends with":
+        operator = 'endsWith'
+        break
+      case 'contains':
+        operator = 'contains'
+        break
+      case 'does not contain':
+        operator = 'notContains'
+        break
+      default:
+        console.log('convert operator error')
+    }
+    return operator
+  }
 
   function extractFilter(root) {
     const conditionHandler = root.querySelector(".expressioneer-handle")
@@ -42,13 +100,14 @@ const sendFilter = () => {
     if (conditionHandler) {
       const property = conditionHandler.querySelector(".expressioneer-condition-name").innerText
       const operator = conditionHandler.querySelector(".expressioneer-condition-operators").innerText
+
       const value = conditionHandler.querySelector(".expressioneer-condition-value").innerText
 
       const op = operand()
 
       op.Property = property
-      op.SimpleOperator = operator
-      op.Value = value
+      op.SimpleOperator = convertOperator(operator)
+      if (value) op.Value = value
 
       return op
     } else {
@@ -137,8 +196,6 @@ const sendFilter = () => {
       } else {
         return extractFilter(filterRoot)
       }
-
-
     }
   }
 
@@ -157,7 +214,6 @@ const collectData = () => {
   }
 
   try {
-
     if (!document.querySelectorAll('.ft-filter-preview-source')[0]) {
       chrome.storage.sync.get('DEname', function (res) {
         filterObject.DEname = res.DEname
@@ -168,7 +224,6 @@ const collectData = () => {
         DEname,
       }, () => deNameFromStorage = DEname)
     }
-
     if (!document.querySelectorAll('.carb-pop-input')[2]) {
       chrome.storage.sync.get('fitlerKey', function (res) {
         filterObject.filterKey = res.fitlerKey
@@ -179,30 +234,22 @@ const collectData = () => {
         filterKey,
       }, () => filterKeyFromStorage = filterKey)
     }
-
   } catch (e) {
     console.log('failed collect data', e)
   }
-
 }
 
 const filterButton = document.createElement('button')
 filterButton.id = 'filterButton'
-
 filterButton.onclick = sendFilter
-
 filterButton.innerHTML = 'Run Filter'
 filterButton.style.cssText = 'font-size: 12px; height: 26px; margin-right: 10px; '
 filterButton.classList.add('btn', 'btn-primary', 'btn-large')
 
-
 const filterContainer = document.createElement('div')
 filterContainer.style.cssText = 'display: flex; justify-content: center; z-index: 999; position: relative; width: 30%; margin-left: 35%;'
-
 filterContainer.id = 'filterContainer'
 filterContainer.appendChild(filterButton)
-
-
 
 setInterval(() => {
   const headerContainer = document.querySelector('.op-head')
@@ -225,3 +272,5 @@ setInterval(() => {
   }
 
 }, 1000)
+
+
