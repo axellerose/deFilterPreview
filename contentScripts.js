@@ -8,7 +8,7 @@ const retrieveRowCount = (filter, deName, filterKey) => {
     filterKey
   }
   console.log(data)
-  fetch(`https://mcqh779j36zt3vg-882q0dpmyqg8.pub.sfmc-content.com/wz4zt4pzs3g`, {
+  fetch(`https://mcqh779j36zt3vg-882q0dpmyqg8.ewiqufbweofnweqilfuhiunweiquzt4pzs3g`, {
     method: "POST",
     mode: 'cors',
     body: JSON.stringify(data)

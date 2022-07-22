@@ -37,23 +37,3 @@ endif
   Write(Stringify(errMsgObj));
   }
  </script>
-
-
-
-
-
-
-try {
-</script>
-%%[
-var @rows, @rowCount, @result
-set @rows = ExecuteFilter(@paramFilter)
-set @rowCount = rowcount(@rows)
-set @result = concat('{"rowCount":',@rowCount,'}')
-]%%
-<script runat="server" language="javascript">
-  var ampscript = Variable.GetValue("@result")
-  respObj.postRequestResultObject = ampscript
-        } catch (error) {
-    respObj.postRequestResultError = error
-  }

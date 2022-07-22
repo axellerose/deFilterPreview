@@ -4,7 +4,7 @@
   HTTPHeader.SetValue("Access-Control-Allow-Methods", "POST")
   HTTPHeader.SetValue("Access-Control-Allow-Origin", "*")
 
-  var VERSION = "V:22-07-2022; 14:57"
+  var VERSION = "V:22-07-2022; 15:06"
 
   // SETTINGS:
   var LOG_SETUP = {
@@ -441,23 +441,21 @@
         var newFDName = newFD.Name
 
 
-        var config = {
-          endpoint: "https://mcqh779j36zt3vg-882q0dpmyqg8.pub.sfmc-content.com/5yr3z0jwnaz?filter=" + newFD.Name, // Landing page
-          contentType: "application/x-www-form-urlencoded" // don't change
 
-        }
 
         try {
-          var httpResult = HTTP.Get(
-            config.endpoint,
-            config.contentType
-          )
-
-          var result = Platform.Function.ParseJSON(httpResult.Content) // Row count
-
-          respObj.postRequestResultObject = result
-
-
+          var paramFilter
+          Variable.SetValue("@paramFilter", newFDName);
+</script>
+%%[
+var @rows, @rowCount, @result
+set @rows = ExecuteFilter(@paramFilter)
+set @rowCount = rowcount(@rows)
+set @result = concat('{"rowCount":',@rowCount,'}')
+]%%
+<script runat="server" language="javascript">
+          var ampscript = Variable.GetValue("@result")
+          respObj.postRequestResultObject = Platform.Function.ParseJSON(ampscript)
         } catch (error) {
           respObj.postRequestResultError = error
         }
@@ -477,7 +475,6 @@
           location: "end of TOP post request "
         }
       }
-
     }
 
 
