@@ -1,0 +1,711 @@
+<script runat="server" language="JavaScript">
+  Platform.Load("core", "1.1.1");
+
+  var VERSION = "V:04.05.2022-15:58";
+
+  // SETTINGS:
+  var LOG_SETUP = {
+    ssjs_script_name: "FiB Dev OPAP Get Campaign API",
+    log_de_key: "3AB5E45D-55BE-4F49-A1E3-4D4A4B886D4F", // this is the only required key
+    execution_mode: "PROD" // string: 'TEST'/'L_PAGE', 'CONSOLE' or 'PROD' (To Data extension)
+  };
+
+  // TODO: keep in Setup:
+  var MC_API_SETUP = {
+    mcEnv: "mcqh779j36zt3vg-882q0dpmyqg8" // only the organization part of the api path ('https://{mcEnv}.auth.marketingcloud.com)
+    // 'businessUnitMID': '500008...' // Optional: set tp MID of the Business Unit you want to use.
+  };
+
+  // LIBRARIES:
+  {
+    if (!String.prototype.trim) {
+      (function () {
+        // Make sure we trim BOM and NBSP
+        var rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g;
+        String.prototype.trim = function () {
+          return this.replace(rtrim, "");
+        };
+      })();
+    }
+
+    if (!String.prototype.endsWith) {
+      String.prototype.endsWith = function (search, this_len) {
+        if (this_len === undefined || this_len > this.length) {
+          this_len = this.length;
+        }
+        return this.substring(this_len - search.length, this_len) === search;
+      };
+    }
+
+    if (!Array.prototype.indexOf) {
+      Array.prototype.indexOf = function indexOf(member, startFrom) {
+        /*
+        In non-strict mode, if the `this` variable is null or undefined, then it is
+        set to the window object. Otherwise, `this` is automatically converted to an
+        object. In strict mode, if the `this` variable is null or undefined, a
+        `TypeError` is thrown.
+        */
+        if (this == null) {
+          throw new TypeError(
+            "Array.prototype.indexOf() - can't convert `" + this + "` to object"
+          );
+        }
+
+        var index = isFinite(startFrom) ? Math.floor(startFrom) : 0,
+          that = this instanceof Object ? this : new Object(this),
+          length = isFinite(that.length) ? Math.floor(that.length) : 0;
+
+        if (index >= length) {
+          return -1;
+        }
+
+        if (index < 0) {
+          index = Math.max(length + index, 0);
+        }
+
+        if (member === undefined) {
+          /*
+        Since `member` is undefined, keys that don't exist will have the same
+        value as `member`, and thus do need to be checked.
+        */
+          do {
+            if (index in that && that[index] === undefined) {
+              return index;
+            }
+          } while (++index < length);
+        } else {
+          do {
+            if (that[index] === member) {
+              return index;
+            }
+          } while (++index < length);
+        }
+
+        return -1;
+      };
+    }
+
+    if (!Array.prototype.includes) {
+      (function () {
+        Array.prototype.includes = function (obj) {
+          //return (this.indexOf("") != -1);
+          if (this.indexOf(obj) >= 0) {
+            return true;
+          } else {
+            return false;
+          }
+        };
+      })();
+    }
+
+    if (!Array.prototype.clone) {
+      (function () {
+        Array.prototype.clone = function () {
+          return this.slice(0);
+        };
+      })();
+    }
+
+    if (!Array.prototype.isArray) {
+      (function () {
+        Array.prototype.isArray = function (arg) {
+          return Object.prototype.toString.call(arg) === "[object Array]";
+        };
+      })();
+    }
+
+    if (!Object.keys) {
+      Object.keys = function (obj) {
+        var arr = [],
+          key;
+        for (key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            arr.push(key);
+          }
+        }
+        return arr;
+      };
+    }
+
+    if (!Object.items) {
+      Object.items = function (obj) {
+        var arr = [],
+          key;
+        for (key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            arr.push(obj[key]);
+          }
+        }
+        return arr;
+      };
+    }
+  }
+
+  var utils = {
+    /**
+     * THROW an EXCEPTION! with a proper error title and message.
+     * @param errorTitle - the line for the Exception.toString()
+     * @param message - the message property text
+     */
+    error: function (errorTitle, message) {
+      var err = new Error(errorTitle);
+      err.message = message;
+      throw err;
+    },
+
+    /**
+     * Check if the string is shorter than given length.
+     * If the string is shorter, than trim it and add 3 dots at the end.
+     * @param str string to check
+     * @param maxLength the maximum lenght of the string (includes the 3 dots!)
+     * @return the (shortened) string
+     */
+    fixLength: function (str, maxLength) {
+      if (typeof str === "string" && str.length > maxLength) {
+        // we've got a string which is too long:
+        var shorter = str.substring(0, maxLength - 3);
+        shorter += "...";
+        return shorter;
+      } else {
+        // this is either not a string or it's not that long:
+        return str;
+      }
+    },
+
+    /**
+     * Converts timestamp from DE to an epoch time.
+     * yyyy-M-d H:m:s z (e.g.: 2017-10-5 13:9:34 -6)
+     * If your time is in UTC, the timezone is: '+0' => 2019-03-12 13:25:00 +0
+     * This time is in the system time not local one
+     */
+    time_to_epoch: function (tm) {
+      if (tm === undefined) {
+        throw new Error("time_to_epoch() needs the $tm parameter!");
+      }
+      var epoch = new Date(tm);
+      epoch = Math.ceil(epoch.getTime() / 1000);
+
+      return epoch;
+    },
+
+    /**
+     * Build the URL.
+     *
+     * @param fqdn - domain name of the target, may (should) include he https.
+     * @param path - API path.
+     * @param params (optional) - JS object (dictionary) of query parameters
+     * @param encodeSpaces (default = true) -
+     * @return fully built URL (and encoded). Error out if fqdn and path are missing.
+     */
+    buildUrl: function (fqdn, path, params, encodeSpaces) {
+      // check parameter values:
+      if (encodeSpaces === undefined) {
+        encodeSpaces = true;
+      }
+      if (fqdn === undefined || path === undefined) {
+        this.error(
+          "BuildPath() error.",
+          "Parameter(s) missing - fqdn: " + fqdn + ", path: " + path + "."
+        );
+      }
+      // ensure, that fqdn & path do not have conflicting slashes:
+      if (fqdn.substring(fqdn.length - 1) === "/") {
+        fqdn = fqdn.substring(0, fqdn.length - 1);
+      }
+      if (path.substring(0, 1) === "/") {
+        path = path.substring(1);
+      }
+      // clear potential last slash in the path:
+      if (path.substring(path.length - 1) === "/") {
+        path = path.substring(0, path.length - 1);
+      }
+      var url = fqdn + "/" + path;
+      // build the parameter section:
+      if (params !== undefined && Object.items(params).length > 0) {
+        var list = [];
+        for (var key in params) {
+          list.push(key + "=" + params[key]);
+        }
+        url += "?" + list.join("&");
+        // encode the url:
+        url = Platform.Function.UrlEncode(url, encodeSpaces);
+      }
+      return url;
+    }
+  };
+
+  /**
+   * Logger capable to log to both Landing Page (when in TESTING mode) or to Data Extension (when not in testing mode).
+   */
+  var log = {
+    ssjs_script_name: "",
+
+    // // Data Extension parameters:
+    log_de_key: "",
+
+    // internal CONSTANTS:
+    mode: {
+      TEST: "TEST",
+      PROD: "PROD",
+      L_PAGE: "L_PAGE",
+      CONSOLE: "CONSOLE"
+    },
+
+    // debug is the default
+    level: {
+      START: "START",
+      DEBUG: "DEBUG",
+      INFO: "INFO",
+      WARN: "WARN",
+      ERROR: "ERROR"
+    },
+
+    // internal PROPERTIES:
+    start_time: new Date(),
+    end_time: null,
+    execution_guid: Platform.Function.GUID(),
+    execution_mode: this.mode.PROD,
+    mock_actions: false, // mock actions when in the test mode?
+    // contains object: {level, time, message}
+    log_memory: [],
+
+    must_encode_char: [
+      // ampersand must be 1st, in order, to have this working (or it will be rewriting all the messages.)
+      "&",
+      "<",
+      ">",
+      '"',
+      "'",
+    ],
+    replacing_encode_char: ["&amp;", "&lt;", "&gt;", "&quot;", "&apos;"],
+
+    must_encode_char_ext: [
+      // ampersand must be 1st, in order, to have this working (or it will be rewriting all the messages.)
+      "&",
+      "<",
+      ">",
+      "'",
+    ],
+    replacing_encode_chars_ext: ["&amp;", "&lt;", "&gt;", "&apos;"],
+
+    // code:
+    /**
+     * setup this log.
+     * @param log_setup JS object {
+     *      'ssjs_script_name'
+     *      'log_de_key' // this is the only required key
+     *      'execution_mode' // string: 'TEST', 'PROD', 'L_PAGE', 'CONSOLE'
+     *      'mock_actions' // boolean - true for mocking, false for real stuff (only in TEST modes)
+     * }
+     * not all keys are required.
+     */
+    setup: function (log_setup) {
+      if (typeof log_setup.ssjs_script_name === "string") {
+        this.ssjs_script_name = log_setup.ssjs_script_name;
+      }
+      if (typeof log_setup.execution_mode === "string") {
+        this.execution_mode = log_setup.execution_mode;
+      }
+      if (typeof log_setup.mock_actions === "boolean") {
+        this.mock_actions = log_setup.mock_actions;
+      }
+      // log_de is mandatory (even if not used):
+      if (typeof log_setup.log_de_key === "string") {
+        this.log_de_key = log_setup.log_de_key;
+      } else {
+        Write(
+          'log_setup.log_de_key not FOUND - got: "' + this.log_de_key + '".'
+        );
+      }
+    },
+
+    /**
+     *
+     * @param {*} message
+     * @param {*} for_ext - optional - false is default. Encode this for extra options? (don't encode `"`?)
+     */
+    encode_chars: function (message, for_ext) {
+      var new_text = message;
+
+      if (for_ext) {
+        for (var i = 0; i < this.must_encode_char_ext.length; i++) {
+          new_text = new_text
+            .split(this.must_encode_char_ext[i])
+            .join(this.replacing_encode_chars_ext[i]);
+        }
+      } else {
+        for (var i = 0; i < this.must_encode_char.length; i++) {
+          if (this.must_encode_char[i])
+            new_text = new_text
+              .split(this.must_encode_char[i])
+              .join(this.replacing_encode_char[i]);
+        }
+      }
+      // clean any new lines:
+      new_text = new_text.split("\n").join(" "); // faster, than replace with global regex.
+
+      return new_text;
+    },
+
+    /**
+     * Is the current execution running in the Production mode?
+     */
+    isProduction: function () {
+      if (this.execution_mode === this.mode.PROD) {
+        return true;
+      } else {
+        return false;
+      }
+    },
+
+    /**
+     * Should the current context mock action or run the real deal?
+     * This is decided on the execution mode and the mock_actions.
+     */
+    shouldRunMock: function () {
+      var res = !this.isProduction() && this.mock_actions;
+      this.log("Run real action isntead of mock? " + res, "DEBUG");
+      return res;
+    },
+
+    /**
+     * Add one message to the log.
+     * @param {*} msg Message, does not have to be string.
+     * @param {*} stringify boolean - should stringify? (default is false for strings, but true for objects)
+     * @param {*} encode boolean - should encode special characters (mostly for XMLs) - default = false
+     */
+    log: function (msg, level, stringify, encode) {
+      var msgObj = {};
+      // stringify if required (default is either not stringify of stringify if not set but msg is an object)
+      if (stringify || (stringify === undefined && typeof msg === "object")) {
+        msg = Stringify(msg);
+      }
+      // encode only if encoded set to true:
+      if (encode || this.execution_mode === this.mode.L_PAGE) {
+        msg = this.encode_chars(msg);
+      }
+      // trim the message:
+      msg = utils.fixLength(msg);
+      // set level, if not defined:
+      if (level === undefined) {
+        level = "INFO";
+      }
+
+      msgObj["message"] = msg;
+      msgObj["level"] = level;
+      msgObj["timestamp"] = new Date().toUTCString();
+
+      this.log_memory.push(msgObj);
+    },
+
+    /**
+     * Flush all the messages in the memory to the desired channel (Landing Page if testing, DE in production.)
+     */
+    flush: function () {
+      // add execution time (and maybe othe stuff later):
+      var exec_time = new Date() - this.start_time;
+
+      this.log_memory.push({
+        message: " Execution time: " + exec_time / 1000 + " seconds.",
+        level: "END",
+        timestamp: new Date().toUTCString()
+      });
+
+      if (this.execution_mode === this.mode.PROD) {
+        // In PROD mode, log into the Data Extension:
+        var log_copy = [];
+        for (var i = 0; i < this.log_memory.length; i++) {
+          if (this.log_memory[i]["level"] !== this.level.DEBUG) {
+            this.log_memory[i]["script_name"] = this.ssjs_script_name;
+            this.log_memory[i]["execution_id"] = this.execution_guid;
+            log_copy.push(this.log_memory[i]);
+          }
+        }
+        var log_DE = DataExtension.Init(this.log_de_key);
+        log_DE.Rows.Add(log_copy);
+      } else if (
+        this.execution_mode === this.mode.L_PAGE ||
+        this.execution_mode === this.mode.TEST ||
+        this.execution_mode === this.mode.CONSOLE
+      ) {
+        // lets write to the landing page:
+        var messages = [];
+        // build the text to be posted:
+        for (var i = 0; i < this.log_memory.length; i++) {
+          var logItem = this.log_memory[i];
+          messages.push(logItem["level"] + ": " + " " + logItem["message"]);
+        }
+
+        var pretext = "Start Execution: " + new Date().toUTCString();
+
+        if (this.execution_mode === this.mode.CONSOLE) {
+          var log_text = pretext + "\n" + messages.join("\n");
+          Platform.Variable.SetValue("@LOG", log_text);
+        } else {
+          var log_text = pretext + "<br>" + messages.join("<br>");
+          Write(log_text);
+        }
+      } else {
+        Write(
+          'Unknown execution_mode detected: "' + this.execution_mode + '".'
+        );
+      }
+    }
+  };
+
+  var mcRestToken = {
+    /**
+     * Library to handle the REST API for MC.
+     */
+    // setup:
+    authUrl: "",
+    restUrl: "",
+    token: "",
+
+    /**
+     * Setup all parameters required by the API.
+     * @param setup
+     * @param skipTokenVerification - skip token verification (separate API call)
+     * @param errorOnTokenFail - should this throw an error, if the token was not obtained?
+     */
+    setup: function (setup, verifyToken, errorOnTokenFail) {
+      if (typeof setup.mcEnv !== "string") {
+        if (errorOnTokenFail) {
+          utils.error("MC REST TOKEN API fail", "Marketing Cloud REST API not set!");
+        } else {
+          log.log("Marketing Cloud REST API not set!", "WARN");
+        }
+      }
+      // assign the setup values:
+      this.authUrl = "https://" + setup.mcEnv + ".auth.marketingcloudapis.com";
+      this.restUrl = "https://" + setup.mcEnv + ".rest.marketingcloudapis.com";
+
+      // check token:
+      var token = Platform.Request.GetRequestHeader('Authorization');
+      this.token = token ? token.substring("Bearer ".length, token.length) : false;
+      if (!token) {
+        if (errorOnTokenFail) {
+          log.log("Marketing Cloud REST API not set!", "WARN");
+        } else {
+          utils.error("MC REST TOKEN API fail", "Token not set!");
+        }
+      }
+
+      if (!skipTokenVerification) {
+        var res = this.request('GET', '/platform/v1/tokenContext');
+        if (res.ok) {
+          return true;
+        } else {
+
+          if (errorOnTokenFail) {
+            utils.error("MC REST TOKEN API fail", "Token verification failed!");
+          } else {
+            return false;
+          }
+        }
+      } else {
+        log.log("Token verification skipped.");
+        return true;
+      }
+    },
+
+    /**
+     * Return token for AUTH:
+     */
+    getToken: function () {
+      return this.token;
+    },
+
+    /**
+     * Run HTTP request against MC REST API.
+     *
+     * @param httpMethod GET/POST (more can be added)
+     * @param path API path
+     * @param body POST body (non string is automatically converted to JSON)
+     * @param urlParams (optional) parameters for GET request
+     * @param baseUrlOverride (optional string) overrides the standard rest url (e.g. to auth url)
+     */
+    request: function (httpMethod, path, body, urlParams, baseUrlOverride) {
+      var result = {
+        ok: false,
+        body: "MC REST API request: " + path + " failed."
+      };
+
+      if (httpMethod !== "GET" && httpMethod !== "POST") {
+        utils.error(
+          "Unknown Http Method",
+          'mcApi.request() does not know http method: "' + httpMethod + '"!'
+        );
+      }
+
+      try {
+        // build the URL:
+        var requestUrl;
+        if (baseUrlOverride) {
+          requestUrl = utils.buildUrl(baseUrlOverride, path, urlParams, false);
+        } else {
+          requestUrl = utils.buildUrl(this.restUrl, path, urlParams, false);
+        }
+        log.log("MC REST API call to: " + requestUrl);
+
+        var req = new Script.Util.HttpRequest(requestUrl);
+        req.emptyContentHandling = 0;
+        req.retries = 2;
+        req.continueOnError = true; // continue on error, if in prod
+        req.contentType = "application/json";
+        var token = "Bearer " + this.token;
+        //log.log('Token: ' + token, 'DEBUG');
+        req.setHeader("Authorization", token);
+        req.setHeader("Accept", "application/json");
+        req.method = httpMethod;
+
+        if (body !== undefined) {
+          log.log("Adding body to the request!", "DEBUG");
+          req.postData = this.handleRequestBody(body);
+        } else {
+          body = '';
+          req.contentType = '';
+        }
+        log.log("Sending Request!");
+        var httpResult = req.send();
+        log.log("Parsing Results!", "DEBUG");
+        var status = httpResult.statusCode + "";
+        if (["200", "201", "202"].includes(status)) {
+          // TODO: req OK:
+          result.ok = true;
+          result.body = httpResult.content + "";
+        } else {
+          log.log("McApi request failed: " + status + ".", "WARN");
+        log.log(result, "WARN");
+        }
+      } catch (err) {
+        log.log("Error in McApi.request(): " + err + ". Message: " + err.message, "ERROR");
+        log.log(err, "DEBUG");
+      }
+      return result;
+    },
+
+    /**
+     *
+     */
+    handleRequestBody: function (body) {
+      if (typeof body === "string") {
+        return body;
+      } else {
+        return Stringify(body);
+      }
+    }
+  };
+
+// AUXILIARY METHODS:
+function getCampaign(isFoundFunction) {
+var lookForMore = true;
+  var iteration = 1;
+  var allowErrors = 2;
+
+while (lookForMore) {
+ var campaignsResults = mcRestToken.request(
+  'GET', '/hub/v1/campaigns', undefined, {
+   "$page": iteration,
+   "$pageSize": 4,
+   "$orderBy": "Name ASC"
+  }
+ );
+ 
+ if (campaignsResults.ok) {
+  var campaignsBody = Platform.Function.ParseJSON(campaignsResults.body);
+
+  var items = campaignsBody.items;
+      log.log('Parsing more Campaign data - page: ' + campaignsBody.page + ', ' + items.length + ' lines.', 'DEBUG');
+
+  for (var i = 0; i < items.length; i++) {
+   if (isFoundFunction(items[i])) {
+    return items[i];
+   }
+  }
+
+      if (items.length < campaignsBody.pageSize) {
+        lookForMore = false;
+      }
+      iteration++;
+ } else {
+      log.log('-- HTTP Error!', 'WARN');
+      allowErrors--;
+      if (allowErrors < 0) {
+        utils.error('MC API problem.', 'Too many HTTP Errors! Last: ' + Stringify(campaignsResults));
+      }
+    }
+}
+return false;
+}
+  
+// AUTOMATION CODE:
+var respObj = {
+ ok: false,
+ message: 'unknown',
+ version: VERSION
+};
+
+try {
+log.setup(LOG_SETUP);
+
+//
+//
+
+if(Platform.Request.Method == 'POST') {
+  var jsonpost = Platform.Request.GetPostData()
+  var json = Platform.Function.ParseJSON(jsonpost);
+  var content = json.element.child;
+
+  respObj.message = 'OK',
+  respObj.body = content
+}
+
+// add post request
+
+
+
+
+//
+//
+
+
+if (mcRestToken.setup(MC_API_SETUP)) {
+ if (Platform.Request.Method == 'GET') {
+   // Reserved for future use:
+   // var campaignCode = Platform.Request.GetQueryStringParameter('name');
+   var campaignCode = Platform.Request.GetQueryStringParameter('code');
+        if (campaignCode) {
+          var campaignsResults = getCampaign(function(campaign) {
+            return campaign.campaignCode == campaignCode;
+          });
+
+          respObj.ok = true;
+          if (campaignsResults === false) {
+            respObj.message = 'not found';
+            respObj.body = null;
+          } else {
+            respObj.message = 'OK';
+            respObj.body = campaignsResults;
+          }
+        } else {
+          respObj.message = 'Campaign Code not set.';
+        }
+ } else {
+   respObj.message = 'Incorrect HTTP Method!';
+ }        
+} else {
+ respObj.message = 'Not authorized!';
+}
+
+var resp = Platform.Function.Stringify(respObj);
+ Write(resp);
+} catch (err) {
+log.log("Error: " + err + ". Message: " + err.message, "ERROR");
+respObj.message = "Error: " + err + ". Message: " + err.message;
+
+var resp = Platform.Function.Stringify(respObj);
+ Write(resp);
+}
+log.flush();
+</script>  

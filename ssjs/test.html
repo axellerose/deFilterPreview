@@ -1,0 +1,39 @@
+<script type="javascript" runat="server">
+  Platform.Load("core","1"); 
+  HTTPHeader.SetValue("content-type", "application/json");
+  var ip = Platform.Request.ClientIP();
+  Variable.SetValue("@ip", ip);
+  try{
+ </script>%%[
+if @ip == "54.72.12.1" or @ip == "54.72.77.249" or @ip == "52.31.154.214" or @ip
+== "63.32.248.187" then
+set @key = requestparameter("key")
+set @string = requestparameter("request")
+if @key == 'o!1\I+y%dA-2F3/r' then
+set @ampProcessed = Concat('%', '%=', @string, '=%', '%')
+If not empty (@string) then
+set @json= '{ "status": "ok", "result": "'
+set @json= concat(@json, TreatAsContent(@ampProcessed), '" }')
+endif
+else
+set @json= concat('{ "status": "error", "reason": "invalid key", "key_used": ',
+@key, ' }')
+endif
+else
+set @json= concat('{ "status": "error", "reason": "restricted IP" }')
+endif
+]%%%%=v(@json)=%%
+<script type="javascript" runat="server">
+  Platform.Load("core","1"); 
+  } catch (error) {
+   var ampscript = Variable.GetValue("@string");
+   var errMsgObj = {
+    status: "error",
+     reason: "wrong ampscript",
+     ampscript: ampscript,
+     errorMessage: error.message,
+     errorDescription: error.description
+   };
+  Write(Stringify(errMsgObj));
+  }
+ </script>

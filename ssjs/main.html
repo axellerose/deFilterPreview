@@ -1,0 +1,492 @@
+<script runat="server" language="JavaScript">
+  Platform.Load("core", "1.1.1")
+
+  HTTPHeader.SetValue("Access-Control-Allow-Methods", "POST")
+  HTTPHeader.SetValue("Access-Control-Allow-Origin", "*")
+
+  var VERSION = "V:22-07-2022; 15:06"
+
+  // SETTINGS:
+  var LOG_SETUP = {
+    ssjs_script_name: "FiB Dev OPAP Get Campaign API",
+    log_de_key: "3AB5E45D-55BE-4F49-A1E3-4D4A4B886D4F", // this is the only required key
+    execution_mode: "PROD" // string: 'TEST'/'L_PAGE', 'CONSOLE' or 'PROD' (To Data extension)
+  }
+
+  // TODO: keep in Setup:
+  var MC_API_SETUP = {
+    mcEnv: "mcqh779j36zt3vg-882q0dpmyqg8"// only the organization part of the api path ('https://{mcEnv}.auth.marketingcloud.com)
+    // 'businessUnitMID': '500008...' // Optional: set tp MID of the Business Unit you want to use.
+  }
+
+
+
+  var log = {
+    ssjs_script_name: "",
+
+    // // Data Extension parameters:
+    log_de_key: "",
+
+    // internal CONSTANTS:
+    mode: {
+      TEST: "TEST",
+      PROD: "PROD",
+      L_PAGE: "L_PAGE",
+      CONSOLE: "CONSOLE"
+    },
+
+    // debug is the default
+    level: {
+      START: "START",
+      DEBUG: "DEBUG",
+      INFO: "INFO",
+      WARN: "WARN",
+      ERROR: "ERROR"
+    },
+
+    // internal PROPERTIES:
+    start_time: new Date(),
+    end_time: null,
+    execution_guid: Platform.Function.GUID(),
+    execution_mode: this.mode.PROD,
+    mock_actions: false, // mock actions when in the test mode?
+    // contains object: {level, time, message}
+    log_memory: [],
+
+    must_encode_char: [
+      // ampersand must be 1st, in order, to have this working (or it will be rewriting all the messages.)
+      "&",
+      "<",
+      ">",
+      '"',
+      "'",
+    ],
+    replacing_encode_char: ["&amp;", "&lt;", "&gt;", "&quot;", "&apos;"],
+
+    must_encode_char_ext: [
+      // ampersand must be 1st, in order, to have this working (or it will be rewriting all the messages.)
+      "&",
+      "<",
+      ">",
+      "'",
+    ],
+    replacing_encode_chars_ext: ["&amp;", "&lt;", "&gt;", "&apos;"],
+
+    // code:
+    /**
+     * setup this log.
+     * @param log_setup JS object {
+     *      'ssjs_script_name'
+     *      'log_de_key' // this is the only required key
+     *      'execution_mode' // string: 'TEST', 'PROD', 'L_PAGE', 'CONSOLE'
+     *      'mock_actions' // boolean - true for mocking, false for real stuff (only in TEST modes)
+     * }
+     * not all keys are required.
+     */
+    setup: function (log_setup) {
+      if (typeof log_setup.ssjs_script_name === "string") {
+        this.ssjs_script_name = log_setup.ssjs_script_name
+      }
+      if (typeof log_setup.execution_mode === "string") {
+        this.execution_mode = log_setup.execution_mode
+      }
+      if (typeof log_setup.mock_actions === "boolean") {
+        this.mock_actions = log_setup.mock_actions
+      }
+      // log_de is mandatory (even if not used):
+      if (typeof log_setup.log_de_key === "string") {
+        this.log_de_key = log_setup.log_de_key
+      } else {
+        Write(
+          'log_setup.log_de_key not FOUND - got: "' + this.log_de_key + '".'
+        )
+      }
+    },
+
+    /**
+     *
+     * @param {*} message
+     * @param {*} for_ext - optional - false is default. Encode this for extra options? (don't encode `"`?)
+     */
+    encode_chars: function (message, for_ext) {
+      var new_text = message
+
+      if (for_ext) {
+        for (var i = 0; i < this.must_encode_char_ext.length; i++) {
+          new_text = new_text
+            .split(this.must_encode_char_ext[i])
+            .join(this.replacing_encode_chars_ext[i])
+        }
+      } else {
+        for (var i = 0; i < this.must_encode_char.length; i++) {
+          if (this.must_encode_char[i])
+            new_text = new_text
+              .split(this.must_encode_char[i])
+              .join(this.replacing_encode_char[i])
+        }
+      }
+      // clean any new lines:
+      new_text = new_text.split("\n").join(" ") // faster, than replace with global regex.
+
+      return new_text
+    },
+
+    /**
+     * Is the current execution running in the Production mode?
+     */
+    isProduction: function () {
+      if (this.execution_mode === this.mode.PROD) {
+        return true
+      } else {
+        return false
+      }
+    },
+
+    /**
+     * Should the current context mock action or run the real deal?
+     * This is decided on the execution mode and the mock_actions.
+     */
+    shouldRunMock: function () {
+      var res = !this.isProduction() && this.mock_actions
+      this.log("Run real action isntead of mock? " + res, "DEBUG")
+      return res
+    },
+
+    /**
+     * Add one message to the log.
+     * @param {*} msg Message, does not have to be string.
+     * @param {*} stringify boolean - should stringify? (default is false for strings, but true for objects)
+     * @param {*} encode boolean - should encode special characters (mostly for XMLs) - default = false
+     */
+    log: function (msg, level, stringify, encode) {
+      var msgObj = {}
+      // stringify if required (default is either not stringify of stringify if not set but msg is an object)
+      if (stringify || (stringify === undefined && typeof msg === "object")) {
+        msg = Stringify(msg)
+      }
+      // encode only if encoded set to true:
+      if (encode || this.execution_mode === this.mode.L_PAGE) {
+        msg = this.encode_chars(msg)
+      }
+      // trim the message:
+      msg = utils.fixLength(msg)
+      // set level, if not defined:
+      if (level === undefined) {
+        level = "INFO"
+      }
+
+      msgObj["message"] = msg
+      msgObj["level"] = level
+      msgObj["timestamp"] = new Date().toUTCString()
+
+      this.log_memory.push(msgObj)
+    },
+
+    /**
+     * Flush all the messages in the memory to the desired channel (Landing Page if testing, DE in production.)
+     */
+    flush: function () {
+      // add execution time (and maybe othe stuff later):
+      var exec_time = new Date() - this.start_time
+
+      this.log_memory.push({
+        message: " Execution time: " + exec_time / 1000 + " seconds.",
+        level: "END",
+        timestamp: new Date().toUTCString()
+      })
+
+      if (this.execution_mode === this.mode.PROD) {
+        // In PROD mode, log into the Data Extension:
+        var log_copy = []
+        for (var i = 0; i < this.log_memory.length; i++) {
+          if (this.log_memory[i]["level"] !== this.level.DEBUG) {
+            this.log_memory[i]["script_name"] = this.ssjs_script_name
+            this.log_memory[i]["execution_id"] = this.execution_guid
+            log_copy.push(this.log_memory[i])
+          }
+        }
+        var log_DE = DataExtension.Init(this.log_de_key)
+        log_DE.Rows.Add(log_copy)
+      } else if (
+        this.execution_mode === this.mode.L_PAGE ||
+        this.execution_mode === this.mode.TEST ||
+        this.execution_mode === this.mode.CONSOLE
+      ) {
+        // lets write to the landing page:
+        var messages = []
+        // build the text to be posted:
+        for (var i = 0; i < this.log_memory.length; i++) {
+          var logItem = this.log_memory[i]
+          messages.push(logItem["level"] + ": " + " " + logItem["message"])
+        }
+
+        var pretext = "Start Execution: " + new Date().toUTCString()
+
+        if (this.execution_mode === this.mode.CONSOLE) {
+          var log_text = pretext + "\n" + messages.join("\n")
+          Platform.Variable.SetValue("@LOG", log_text)
+        } else {
+          var log_text = pretext + "<br>" + messages.join("<br>")
+          Write(log_text)
+        }
+      } else {
+        Write(
+          'Unknown execution_mode detected: "' + this.execution_mode + '".'
+        )
+      }
+    }
+  }
+
+  var mcRestToken = {
+    /**
+     * Library to handle the REST API for MC.
+     */
+    // setup:
+    authUrl: "",
+    restUrl: "",
+    token: "",
+
+    /**
+     * Setup all parameters required by the API.
+     * @param setup
+     * @param skipTokenVerification - skip token verification (separate API call)
+     * @param errorOnTokenFail - should this throw an error, if the token was not obtained?
+     */
+    setup: function (setup, verifyToken, errorOnTokenFail) {
+      if (typeof setup.mcEnv !== "string") {
+        if (errorOnTokenFail) {
+          utils.error("MC REST TOKEN API fail", "Marketing Cloud REST API not set!")
+        } else {
+          log.log("Marketing Cloud REST API not set!", "WARN")
+        }
+      }
+      // assign the setup values:
+      this.authUrl = "https://" + setup.mcEnv + ".auth.marketingcloudapis.com"
+      this.restUrl = "https://" + setup.mcEnv + ".rest.marketingcloudapis.com"
+
+      // check token:
+      var token = Platform.Request.GetRequestHeader('Authorization')
+      this.token = token ? token.substring("Bearer ".length, token.length) : false
+      if (!token) {
+        if (errorOnTokenFail) {
+          log.log("Marketing Cloud REST API not set!", "WARN")
+        } else {
+          utils.error("MC REST TOKEN API fail", "Token not set!")
+        }
+      }
+
+      if (!skipTokenVerification) {
+        var res = this.request('GET', '/platform/v1/tokenContext')
+        if (res.ok) {
+          return true
+        } else {
+
+          if (errorOnTokenFail) {
+            utils.error("MC REST TOKEN API fail", "Token verification failed!")
+          } else {
+            return false
+          }
+        }
+      } else {
+        log.log("Token verification skipped.")
+        return true
+      }
+    },
+
+    /**
+     * Return token for AUTH:
+     */
+    getToken: function () {
+      return this.token
+    },
+
+    /**
+     * Run HTTP request against MC REST API.
+     *
+     * @param httpMethod GET/POST (more can be added)
+     * @param path API path
+     * @param body POST body (non string is automatically converted to JSON)
+     * @param urlParams (optional) parameters for GET request
+     * @param baseUrlOverride (optional string) overrides the standard rest url (e.g. to auth url)
+     */
+    request: function (httpMethod, path, body, urlParams, baseUrlOverride) {
+      var result = {
+        ok: false,
+        body: "MC REST API request: " + path + " failed."
+      }
+
+      if (httpMethod !== "GET" && httpMethod !== "POST") {
+        utils.error(
+          "Unknown Http Method",
+          'mcApi.request() does not know http method: "' + httpMethod + '"!'
+        )
+      }
+
+      try {
+        // build the URL:
+        var requestUrl
+        if (baseUrlOverride) {
+          requestUrl = utils.buildUrl(baseUrlOverride, path, urlParams, false)
+        } else {
+          requestUrl = utils.buildUrl(this.restUrl, path, urlParams, false)
+        }
+        log.log("MC REST API call to: " + requestUrl)
+
+        var req = new Script.Util.HttpRequest(requestUrl)
+        req.emptyContentHandling = 0
+        req.retries = 2
+        req.continueOnError = true // continue on error, if in prod
+        req.contentType = "application/json"
+        var token = "Bearer " + this.token
+        //log.log('Token: ' + token, 'DEBUG');
+        req.setHeader("Authorization", token)
+        req.setHeader("Accept", "application/json")
+        req.method = httpMethod
+
+        if (body !== undefined) {
+          log.log("Adding body to the request!", "DEBUG")
+          req.postData = this.handleRequestBody(body)
+        } else {
+          body = ''
+          req.contentType = ''
+        }
+        log.log("Sending Request!")
+        var httpResult = req.send()
+        log.log("Parsing Results!", "DEBUG")
+        var status = httpResult.statusCode + ""
+        if (["200", "201", "202"].includes(status)) {
+          // TODO: req OK:
+          result.ok = true
+          result.body = httpResult.content + ""
+        } else {
+          log.log("McApi request failed: " + status + ".", "WARN")
+          log.log(result, "WARN")
+        }
+      } catch (err) {
+        log.log("Error in McApi.request(): " + err + ". Message: " + err.message, "ERROR")
+        log.log(err, "DEBUG")
+      }
+      return result
+    },
+
+    /**
+     *
+     */
+    handleRequestBody: function (body) {
+      if (typeof body === "string") {
+        return body
+      } else {
+        return Stringify(body)
+      }
+    }
+  }
+
+  // AUTOMATION CODE:
+  var respObj = {
+    ok: false,
+    message: 'unknown',
+    version: VERSION
+  }
+
+  try {
+    log.setup(LOG_SETUP)
+    if (Platform.Request.Method == 'POST') {
+      try {
+        var jsonpost = Platform.Request.GetPostData()
+        var json = Platform.Function.ParseJSON(jsonpost)
+
+        var deName = json.deName
+        var filter = json.filter
+
+
+
+        /* Grabs DE Object Info */
+        var prox1 = new Script.Util.WSProxy()
+        var cols1 = ["Name", "CustomerKey"]
+        var filter1 = {
+          Property: "Name",
+          SimpleOperator: "equals",
+          Value: deName
+        }
+        var desc = prox1.retrieve("DataExtension", cols1, filter1)
+
+        var CustKeyStr = desc.Results[0].CustomerKey
+
+        respObj.ok = true
+        respObj.message = 'success'
+        respObj.removed = false
+
+        var filterName = deName + (Math.floor(Math.random() * 1000) + 1).toString()
+
+        var newFD = {
+          Name: filterName,
+          CustomerKey: filterName,
+          Filter: filter,
+          DataSource: {
+            Type: 'DataExtension',
+            CustomerKey: CustKeyStr
+          }
+        }
+
+        respObj.payload = filterName
+
+
+        try {
+          var result = FilterDefinition.Add(newFD)
+          respObj.filterResult = result
+        } catch (e) {
+          respObj.errorFilter = e
+        }
+
+        var newFDName = newFD.Name
+
+
+
+
+        try {
+          var paramFilter
+          Variable.SetValue("@paramFilter", newFDName);
+</script>
+%%[
+var @rows, @rowCount, @result
+set @rows = ExecuteFilter(@paramFilter)
+set @rowCount = rowcount(@rows)
+set @result = concat('{"rowCount":',@rowCount,'}')
+]%%
+<script runat="server" language="javascript">
+          var ampscript = Variable.GetValue("@result")
+          respObj.postRequestResultObject = Platform.Function.ParseJSON(ampscript)
+        } catch (error) {
+          respObj.postRequestResultError = error
+        }
+
+        try {
+          var fd = FilterDefinition.Init(newFD.Name)
+          fd.Remove()
+          respObj.removed = true
+        } catch (error) {
+          respObj.removeError = error
+        }
+
+
+      } catch (e) {
+        respObj.postError = {
+          message: e.message,
+          location: "end of TOP post request "
+        }
+      }
+    }
+
+
+
+    var resp = Platform.Function.Stringify(respObj)
+    Write(resp)
+  } catch (err) {
+    log.log("Error: " + err + ". Message: " + err.message, "ERROR")
+    respObj.message = "Error: " + err + ". Message: " + err.message
+
+    var resp = Platform.Function.Stringify(respObj)
+    Write(resp)
+  }
+  log.flush();
+</script>
