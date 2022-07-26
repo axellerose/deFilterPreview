@@ -1,14 +1,14 @@
 let deNameFromStorage = ''
 let filterKeyFromStorage = ''
 const retrieveRowCount = (filter, deName, filterKey) => {
-
+  const FILTER_DEFINITON_URL = "https://mcqh779j36zt3vg-882q0dpmyqg8.pub.sfmc-content.com/wz4zt4pzs3g"
   const data = {
     deName,
     filter,
     filterKey
   }
   console.log(data)
-  fetch(`https://mcqh779j36zt3vg-882q0dpmyqg8.pub.sfmc-content.com/wz4zt4pzs3g`, {
+  fetch(FILTER_DEFINITON_URL, {
     method: "POST",
     mode: 'cors',
     body: JSON.stringify(data)
