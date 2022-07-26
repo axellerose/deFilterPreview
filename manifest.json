@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DE Filter extension",
-  "version": "1.0.11",
+  "version": "1.1",
   "icons": {
     "16": "icon.png",
     "48": "icon.png",
@@ -16,10 +16,8 @@
     "default_title": "DE Filter ",
     "default_popup": "popup.html"
   },
-  "options_page": "options.html",
   "permissions": [
     "storage",
-    "alarms",
     "https://mcqh779j36zt3vg-882q0dpmyqg8.pub.sfmc-content.com/wz4zt4pzs3g",
     "https://members.s10.exacttarget.com"
   ],
@@ -31,8 +29,7 @@
   },
   "content_scripts": [{
     "matches": ["<all_urls>"],
-    "js": ["contentScripts.js", "convertFilterQuery.js"],
-    "css": ["contentScripts.css"],
+    "js": ["contentScripts.js"],
     "all_frames": true
   }]
 }
