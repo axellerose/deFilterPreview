@@ -1,3 +1,8 @@
 body {
-  display: none;
+  width: 250px; 
+}
+
+.bu_form {
+  display: flex;
+  flex-direction: column;
 }

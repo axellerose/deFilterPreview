@@ -5,15 +5,36 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy"
-    content="upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <link rel="stylesheet" href="popup.css">
   <title>Custom Filter Activity</title>
 </head>
 
 <body>
 
+  <p>Please select your Business Unit:</p>
+  <div class="bu_form">
+    <div>
+        <input type="radio" id="test" name="bu" value="https://cloud.coms.opap.gr/filter1">
+        <label for="test">TEST</label><br>
+    </div>
+    <div>
+        <input type="radio" id="vlts-prod" name="bu" value="https://cloud.coms.opap.gr/filter-vlts-prod">
+        <label for="vlts-prod">VLTS-PROD</label><br>
+    </div>
+    <div>
+        <input type="radio" id="online-prod" name="bu" value="https://cloud.coms.opap.gr/filter-online-prod">
+        <label for="online-prod">ONLINE-PROD</label>
+    </div>
+    <div>
+      
+        <input type="radio" id="retail-prod" name="bu" value="https://cloud.coms.opap.gr/filter-retail-prod">
+        <label for="retail-prod">RETAIL-PROD</label>
+    </div>
 
+    <h3 id="active"></h3>
+
+  </div>
 
   <script src="popup.js"></script>
 </body>

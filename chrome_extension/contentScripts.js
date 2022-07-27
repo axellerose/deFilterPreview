@@ -1,14 +1,28 @@
 let deNameFromStorage = ''
 let filterKeyFromStorage = ''
-const retrieveRowCount = (filter, deName, filterKey) => {
-  const FILTER_DEFINITON_URL = "https://cloud.coms.opap.gr/filter1"
+let urlFromStorage = ''
+
+async function getFromStorage(key) {
+  return new Promise((resolve, reject) => {
+      chrome.storage.sync.get(key, resolve);
+  })
+      .then(result => {
+          if (key == null) return result;
+          else return result[key];
+      });
+}
+
+
+const retrieveRowCount = (filter, deName, filterKey, unitUrl) => {
+
   const data = {
     deName,
     filter,
     filterKey
   }
+
   console.log(data)
-  fetch(FILTER_DEFINITON_URL, {
+  fetch(unitUrl, {
     method: "POST",
     mode: 'cors',
     body: JSON.stringify(data)
@@ -201,13 +215,14 @@ const sendFilter = () => {
 
   const filterRoot = document.querySelector(".expression")
   const resultFilter = findFilter(filterRoot)
+  getFromStorage('bu').then(res => {console.log(res); urlFromStorage = res; return urlFromStorage})
+  
+  retrieveRowCount(resultFilter, deNameFromStorage, filterKeyFromStorage, urlFromStorage)
 
-  retrieveRowCount(resultFilter, deNameFromStorage, filterKeyFromStorage)
 
 }
 
 const collectData = () => {
-
   let filterObject = {
     DEname: '',
     filterKey: ''
@@ -239,6 +254,8 @@ const collectData = () => {
   }
 }
 
+
+
 const filterButton = document.createElement('button')
 filterButton.id = 'filterButton'
 filterButton.onclick = sendFilter
@@ -257,7 +274,6 @@ setInterval(() => {
   const editFilterPage = document.querySelector('.filter-text-heading')
   const filterOverviewPage = document.querySelector('.ft-filter-preview-source')
   const headerInEdit = document.querySelector('.expressions-wrap')
-
   const container = document.querySelector('#filterContainer')
 
   if ((editFilterPage || filterOverviewPage) && container) {
