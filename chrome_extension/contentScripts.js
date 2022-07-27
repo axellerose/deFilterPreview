@@ -1,7 +1,7 @@
 let deNameFromStorage = ''
 let filterKeyFromStorage = ''
 const retrieveRowCount = (filter, deName, filterKey) => {
-  const FILTER_DEFINITON_URL = "https://mcqh779j36zt3vg-882q0dpmyqg8.pub.sfmc-content.com/wz4zt4pzs3g"
+  const FILTER_DEFINITON_URL = "https://cloud.coms.opap.gr/filter1"
   const data = {
     deName,
     filter,
