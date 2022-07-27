@@ -40,20 +40,20 @@
 
 - `contentScripts.js` : runs the logic of GCE <br>
 
-`const retrieveRowCount = (filter, deName, filterKey) => {}` <br>
-Does a POST request to cloud pages, returns rows count and changes the text of a button <br>
+    `const retrieveRowCount = (filter, deName, filterKey) => {}` <br>
+    Does a POST request to cloud pages, returns rows count and changes the text of a button <br>
 
-`const sendFilter = () => {}` <br>
-Inner function `findFilter()` iterates through the Filter Form and converts collected data to a filter object `resultFilter`. Finally it runs a function `const retrieveRowCount = (filter, deName, filterKey)` <br>
+    `const sendFilter = () => {}` <br>
+    Inner function `findFilter()` iterates through the Filter Form and converts collected data to a filter object `resultFilter`. Finally it runs a function `const retrieveRowCount = (filter, deName, filterKey)` <br>
 
-`const collectData = () => {}` <br>
-Iterates through the page HTML content and saves Data Extension name and Fitler Key to chrome extension storage  <br>
+    `const collectData = () => {}` <br>
+    Iterates through the page HTML content and saves Data Extension name and Fitler Key to chrome extension storage  <br>
 
-`const filterButton, filterContainer` <br>
-Filter button definition<br>
+    `const filterButton, filterContainer` <br>
+    Filter button definition<br>
 
-`setInterval()` <br>
-Checks that we are on the right page and paint Fitler button<br>
+    `setInterval()` <br>
+    Checks that we are on the right page and paint Fitler button<br>
 
 - `manifest.json` <br>
 Contains setup and permissions for GCE.
@@ -63,11 +63,6 @@ Contains setup and permissions for GCE.
 ### ssjs folder
 
 - `filterTemplate` <br>
-Contains a filter logic. Starting from `line 350` it processes the POST request and returns respObj object that contains RowCount 
-
-- `main.js` You can ignore it, it will not be on production. Is used for merkle internal development.
-
--
-
+Contains a filter logic. Starting from `line 350` it processes the POST request and returns respObj object that contains RowCount. All content above line 350 could be used for security and debug proposes. At the moment this code does absolutely nothing.
 
 
