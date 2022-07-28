@@ -215,7 +215,7 @@ const sendFilter = () => {
 
   const filterRoot = document.querySelector(".expression")
   const resultFilter = findFilter(filterRoot)
-  getFromStorage('bu').then(res => {console.log(res); urlFromStorage = res; return urlFromStorage})
+  getFromStorage('buLink').then(res => {console.log(res); urlFromStorage = res; return urlFromStorage})
   
   retrieveRowCount(resultFilter, deNameFromStorage, filterKeyFromStorage, urlFromStorage)
 
@@ -268,13 +268,28 @@ filterContainer.style.cssText = 'display: flex; justify-content: center; z-index
 filterContainer.id = 'filterContainer'
 filterContainer.appendChild(filterButton)
 
-setInterval(() => {
+setInterval(async () => {
   const headerContainer = document.querySelector('.op-head')
 
   const editFilterPage = document.querySelector('.filter-text-heading')
   const filterOverviewPage = document.querySelector('.ft-filter-preview-source')
   const headerInEdit = document.querySelector('.expressions-wrap')
   const container = document.querySelector('#filterContainer')
+
+  const activeBUName = document.querySelector('.mc-header-accounts .value')
+
+  if (activeBUName) {
+  
+    let BUNameFromStorage = await getFromStorage('buName')
+    
+    if (BUNameFromStorage  != activeBUName.textContent) {
+      chrome.storage.sync.set({
+        buName: activeBUName.textContent
+      })
+      console.log('updated buName', activeBUName.textContent, BUNameFromStorage )
+    }
+
+  }
 
   if ((editFilterPage || filterOverviewPage) && container) {
 

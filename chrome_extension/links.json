@@ -1,0 +1,18 @@
+{
+    "TESTING ENVIRONMENT": {
+        "id": "test",
+        "link": "https://cloud.coms.opap.gr/filter1"
+    },
+    "VLTS PRODUCTION ENVIRONMENT": {
+        "id": "vlts",
+        "link": "https://cloud.coms.opap.gr/filter-vlts-prod"
+    },
+    "ONLINE PRODUCTION ENVIRONMENT": {
+        "id": "online",
+        "link": "https://cloud.coms.opap.gr/filter-online-prod"
+    },
+    "RETAIL PRODUCTION ENVIRONMENT": {
+        "id": "retail",
+        "link": "https://cloud.coms.opap.gr/filter-retail-prod"
+    }
+}
