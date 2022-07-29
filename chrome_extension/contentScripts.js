@@ -13,6 +13,59 @@ async function getFromStorage(key) {
 }
 
 
+/*   
+      On chrome extension storage change event listener
+*/
+
+let buList = {
+  "TESTING ENVIRONMENT": {
+  id: "test",
+  link: "https://cloud.coms.opap.gr/filter1",}
+,
+  "VLTS PRODUCTION ENVIRONMENT": {
+  id: "vlts",
+  link: "https://cloud.coms.opap.gr/filter-vlts-prod",
+},
+  "ONLINE PRODUCTION ENVIRONMENT": {
+  id: "online",
+  link: "https://cloud.coms.opap.gr/filter-online-prod",
+},
+  "RETAIL PRODUCTION ENVIRONMENT": {
+  id: "retail",
+  link: "https://cloud.coms.opap.gr/filter-retail-prod",
+},
+}
+
+
+chrome.storage.onChanged.addListener(function (changes, namespace) {
+for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
+  if (key=='buName') {
+    console.log(
+      `Storage key "${key}" in namespace "${namespace}" changed.`,
+      `Old value was "${oldValue}", new value is "${newValue}".`
+    );
+    chrome.storage.sync.set({
+      buLink: buList[newValue].link
+
+    })
+    let target = document.querySelector(`#${buList[newValue].id}`)
+    if (target) {
+      target.checked = true
+      console.log('target checked')
+    } else {
+      console.log('target not found')
+    }
+  }
+
+}
+});
+
+/*   
+      End of On chrome extension storage change event listener
+*/
+
+
+
 const retrieveRowCount = (filter, deName, filterKey, unitUrl) => {
 
   const data = {
@@ -31,6 +84,7 @@ const retrieveRowCount = (filter, deName, filterKey, unitUrl) => {
     .then(response => response.json())
     .then(data => {
       const rows = data.postRequestResultObject.rowCount
+      console.log('RowsCount: ', rows)
       document.querySelector('#filterButton').innerHTML = rows
     })
     .catch(error => console.error(JSON.stringify(error)))
@@ -81,6 +135,9 @@ const sendFilter = async  () => {
       case "in":
         operator = 'IN'
         break
+      case "is":
+        operator = 'equals'
+        break
       case "exists in":
         operator = 'existsInString'
         break
@@ -108,7 +165,26 @@ const sendFilter = async  () => {
     return operator
   }
 
+
+
   function extractFilter(root) {
+
+    function convertValue (v) {
+      let value = ''
+      switch (v) {
+        case 'true':
+          value = true
+          break;
+        case 'false':
+          value = false
+          break;
+        default:
+          value = v
+          break;
+      }
+      return value
+    }   
+
     const conditionHandler = root.querySelector(".expressioneer-handle")
 
     // console.log("extracting", conditionHandler);
@@ -122,7 +198,8 @@ const sendFilter = async  () => {
 
       op.Property = property
       op.SimpleOperator = convertOperator(operator)
-      if (value) op.Value = value
+
+      op.Value = convertValue(value)
 
       return op
     } else {
@@ -268,6 +345,8 @@ const filterContainer = document.createElement('div')
 filterContainer.style.cssText = 'display: flex; justify-content: center; z-index: 999; position: relative; width: 30%; margin-left: 35%;'
 filterContainer.id = 'filterContainer'
 filterContainer.appendChild(filterButton)
+
+chrome.storage.sync.set({buName: null}, console.log('BU name cleaned'))
 
 setInterval(async () => {
   const headerContainer = document.querySelector('.op-head')

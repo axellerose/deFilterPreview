@@ -6,3 +6,11 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+.radio {
+  background-color: #fff;
+}
+
+.radio:disabled {
+  background-color: red;
+}
