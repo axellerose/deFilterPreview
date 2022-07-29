@@ -18,7 +18,8 @@ const retrieveRowCount = (filter, deName, filterKey, unitUrl) => {
   const data = {
     deName,
     filter,
-    filterKey
+    filterKey,
+    unitUrl
   }
 
   console.log(data)
@@ -35,7 +36,7 @@ const retrieveRowCount = (filter, deName, filterKey, unitUrl) => {
     .catch(error => console.error(JSON.stringify(error)))
 }
 
-const sendFilter = () => {
+const sendFilter = async  () => {
 
   const filter = () => ({
     LeftOperand: {},
@@ -215,8 +216,8 @@ const sendFilter = () => {
 
   const filterRoot = document.querySelector(".expression")
   const resultFilter = findFilter(filterRoot)
-  getFromStorage('buLink').then(res => {console.log(res); urlFromStorage = res; return urlFromStorage})
-  
+
+  urlFromStorage = await getFromStorage('buLink')
   retrieveRowCount(resultFilter, deNameFromStorage, filterKeyFromStorage, urlFromStorage)
 
 
